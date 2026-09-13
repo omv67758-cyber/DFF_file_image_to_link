@@ -16,24 +16,18 @@ jobs:
         run: |
           rm -rf app-source
           mkdir -p app-source
-
           unzip -q main.zip -d app-source
-
-          echo "ZIP के अंदर की files:"
-          find app-source -maxdepth 4 -type f | sort | head -150
 
           PACKAGE_FILE=$(find app-source -type f -name "package.json" -print -quit)
 
           if [ -z "$PACKAGE_FILE" ]; then
-            echo "ERROR: ZIP के अंदर package.json नहीं मिली"
-            echo "ZIP listing:"
+            echo "ERROR: package.json नहीं मिली"
             unzip -l main.zip
             exit 1
           fi
 
           PROJECT_DIR=$(dirname "$PACKAGE_FILE")
-
-          echo "Project folder मिला: $PROJECT_DIR"
+          echo "Project folder: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Setup Node.js
@@ -56,9 +50,18 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Connect project to Expo organization
+      - name: Add Expo project ID
         working-directory: ${{ env.PROJECT_DIR }}
-        run: eas init --account dfffileimagetolink --non-interactive
+        run: |
+          sed -i '/^  experiments:/i\
+            extra: {\
+              eas: {\
+                projectId: "6a5f1ff2-cbf8-443a-99ea-ce133d37ac6f"\
+              }\
+            },' app.config.ts
+
+          echo "Expo project ID added:"
+          grep -A5 -B2 "projectId" app.config.ts
 
       - name: Build Android APK
         working-directory: ${{ env.PROJECT_DIR }}
