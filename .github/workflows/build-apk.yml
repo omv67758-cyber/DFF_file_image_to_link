@@ -8,8 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Extract source ZIP
+        run: |
+          unzip -q main.zip -d app-source
+          echo "Project files:"
+          ls -la app-source
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -22,6 +28,7 @@ jobs:
           corepack prepare pnpm@9.12.0 --activate
 
       - name: Install dependencies
+        working-directory: app-source
         run: pnpm install --frozen-lockfile
 
       - name: Setup Expo EAS
@@ -31,4 +38,6 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK
+        working-directory: app-source
         run: eas build --platform android --profile preview --non-interactive --no-wait
+        
