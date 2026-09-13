@@ -5,6 +5,7 @@ on:
 
 jobs:
   build-apk:
+    name: Build APK with Expo EAS
     runs-on: ubuntu-latest
 
     steps:
@@ -15,9 +16,10 @@ jobs:
         run: |
           rm -rf app-source
           mkdir -p app-source
+
           unzip -q main.zip -d app-source
 
-          echo "ZIP structure:"
+          echo "ZIP के अंदर की files:"
           find app-source -maxdepth 4 -type f | sort | head -150
 
           PACKAGE_FILE=$(find app-source -type f -name "package.json" -print -quit)
@@ -31,10 +33,10 @@ jobs:
 
           PROJECT_DIR=$(dirname "$PACKAGE_FILE")
 
-          echo "Project folder: $PROJECT_DIR"
+          echo "Project folder मिला: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -48,11 +50,15 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Expo EAS
+      - name: Setup Expo and EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Connect project to Expo organization
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: eas init --account dfffileimagetolink --non-interactive
 
       - name: Build Android APK
         working-directory: ${{ env.PROJECT_DIR }}
