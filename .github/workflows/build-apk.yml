@@ -16,8 +16,23 @@ jobs:
           rm -rf app-source
           mkdir -p app-source
           unzip -q main.zip -d app-source
-          echo "Extracted project:"
-          ls -la app-source/mainfolder
+
+          echo "ZIP structure:"
+          find app-source -maxdepth 4 -type f | sort | head -150
+
+          PACKAGE_FILE=$(find app-source -type f -name "package.json" -print -quit)
+
+          if [ -z "$PACKAGE_FILE" ]; then
+            echo "ERROR: ZIP के अंदर package.json नहीं मिली"
+            echo "ZIP listing:"
+            unzip -l main.zip
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$PACKAGE_FILE")
+
+          echo "Project folder: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,7 +45,7 @@ jobs:
           corepack prepare pnpm@9.12.0 --activate
 
       - name: Install dependencies
-        working-directory: app-source/mainfolder
+        working-directory: ${{ env.PROJECT_DIR }}
         run: pnpm install --frozen-lockfile
 
       - name: Setup Expo EAS
@@ -40,6 +55,6 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build Android APK
-        working-directory: app-source/mainfolder
+        working-directory: ${{ env.PROJECT_DIR }}
         run: eas build --platform android --profile preview --non-interactive --no-wait
         
